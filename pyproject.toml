@@ -1,0 +1,10 @@
+[project]
+name = "discovercardinspectortool"
+version = "0.1.0"
+description = "Web tool for inspecting Discover feed card screenshots alongside their JSON metadata"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "flask>=3.1",
+    "gunicorn>=23.0",
+]

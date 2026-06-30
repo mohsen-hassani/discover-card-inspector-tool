@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Upload — Discover Inspector{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <h1 class="text-xl font-semibold mb-6">Upload card</h1>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">Screenshot</label>
+        <div id="drop-zone"
+             class="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 transition-colors">
+          <input type="file" name="image" id="image-input" accept="image/*" required class="hidden">
+          <div id="drop-label">
+            <p class="text-gray-400 mb-2">Drop image here or <span class="text-indigo-400">browse</span></p>
+            <p class="text-xs text-gray-600">PNG, JPG, GIF, WebP, BMP — max 50 MB</p>
+          </div>
+          <img id="preview" src="" alt="" class="hidden max-h-48 mx-auto rounded mt-2">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">JSON metadata</label>
+        <textarea name="json_data" id="json_data" rows="16" required
+          placeholder='Paste the card JSON object here...'
+          class="w-full bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:border-indigo-500 resize-y"></textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit"
+          class="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-md text-sm font-medium transition-colors">
+          Upload
+        </button>
+        <a href="{{ url_for('main.gallery') }}"
+          class="px-6 py-2 rounded-md text-sm text-gray-400 hover:text-gray-200 transition-colors">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const dropZone = document.getElementById('drop-zone');
+  const input = document.getElementById('image-input');
+  const preview = document.getElementById('preview');
+  const label = document.getElementById('drop-label');
+
+  function showPreview(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.classList.remove('hidden');
+      label.classList.add('hidden');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  dropZone.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => showPreview(input.files[0]));
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-indigo-500'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('border-indigo-500');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      showPreview(file);
+    }
+  });
+</script>
+{% endblock %}

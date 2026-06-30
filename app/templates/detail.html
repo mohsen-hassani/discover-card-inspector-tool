@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Card #{{ card['id'] }} — Discover Inspector{% endblock %}
+{% block main_class %}p-0{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-[calc(100vh-57px)]">
+
+  {# ── Top bar ── #}
+  <div class="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800 shrink-0">
+    <div class="flex items-center gap-3">
+      <a href="{{ url_for('main.gallery') }}" class="text-gray-400 hover:text-gray-200 text-sm">← Gallery</a>
+      <span class="text-gray-700">|</span>
+      <span class="text-sm text-gray-300 truncate max-w-xs">{{ card['original_filename'] }}</span>
+    </div>
+    <form method="post" action="{{ url_for('main.delete_card', card_id=card['id']) }}"
+          onsubmit="return confirm('Delete this card?')">
+      <button type="submit" class="text-xs text-red-500 hover:text-red-400 px-2 py-1 rounded border border-red-800 hover:border-red-600 transition-colors">
+        Delete
+      </button>
+    </form>
+  </div>
+
+  {# ── Thumbnail sidebar (horizontal strip) ── #}
+  <div class="shrink-0 bg-gray-900 border-b border-gray-800 px-3 py-2">
+    <div class="flex gap-2 overflow-x-auto pb-1">
+      {% for c in all_cards %}
+      <a href="{{ url_for('main.card_detail', card_id=c['id']) }}"
+         class="shrink-0 w-20 h-14 rounded overflow-hidden border-2 transition-colors
+                {% if c['id'] == card['id'] %}border-indigo-500{% else %}border-transparent hover:border-gray-600{% endif %}">
+        <img src="{{ url_for('main.uploaded_file', filename=c['filename']) }}"
+             alt="{{ c['original_filename'] }}"
+             class="w-full h-full object-cover">
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ── Main content: image + JSON side by side ── #}
+  <div class="flex flex-1 overflow-hidden">
+
+    {# Image panel #}
+    <div class="flex-1 overflow-auto flex items-start justify-center p-4 bg-gray-950 min-w-0">
+      <img src="{{ url_for('main.uploaded_file', filename=card['filename']) }}"
+           alt="{{ card['original_filename'] }}"
+           class="max-w-full max-h-full object-contain rounded-lg shadow-2xl">
+    </div>
+
+    {# JSON panel #}
+    <div class="w-[420px] shrink-0 overflow-auto border-l border-gray-800 bg-gray-900 sidebar-scroll">
+      <div class="sticky top-0 bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center justify-between z-10">
+        <span class="text-xs font-medium text-gray-400 uppercase tracking-wider">JSON metadata</span>
+        <button onclick="copyJson()" class="text-xs text-indigo-400 hover:text-indigo-300">Copy</button>
+      </div>
+      <pre class="m-0 p-0 text-xs leading-relaxed overflow-x-auto"><code id="json-block" class="language-json !p-4 !bg-transparent">{{ pretty_json }}</code></pre>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function copyJson() {
+    const text = document.getElementById('json-block').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  }
+</script>
+{% endblock %}
