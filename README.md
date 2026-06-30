@@ -46,21 +46,24 @@ echo "SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_hex(32))')" >
 
 Create an A record for `discover-inspector.vione.cloud` pointing to your server's IP.
 
-### 3. Create the data directory on the host
+### 3. Create the uploads directory and seed the database file
 
 ```bash
-mkdir -p /opt/discover-inspector/data/uploads
+mkdir -p uploads
+touch db.sqlite3   # must exist as a file before the first `docker compose up`
 ```
 
 ### 4. Start the app container
 
 ```bash
-docker compose --env-file .env up -d --build
+docker compose up -d --build
 ```
 
-Gunicorn listens on `127.0.0.1:5001` (host-only, not public). Uploaded files and the database are stored at `/opt/discover-inspector/data/` on the host.
+Gunicorn listens on `127.0.0.1:5001` (host-only, not public). Files are stored directly in the project root on the host — `uploads/` for images and `db.sqlite3` for the database.
 
 ### 5. Configure the host Nginx
+
+Edit `nginx/nginx.conf` and replace `/path/to/DiscoverCardInspectorTool/` with the actual project path (e.g. `/opt/apps/discover-card-inspector-tool/`), then:
 
 ```bash
 cp nginx/nginx.conf /etc/nginx/sites-available/discover-inspector
@@ -68,7 +71,7 @@ ln -s /etc/nginx/sites-available/discover-inspector /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 ```
 
-Nginx serves uploaded images directly from `/opt/discover-inspector/data/uploads/` and proxies everything else to Gunicorn.
+Nginx serves uploaded images directly from `uploads/` in the project root and proxies everything else to Gunicorn.
 
 ### 5. Enable HTTPS with Let's Encrypt (recommended)
 
@@ -82,9 +85,8 @@ Certbot will patch the vhost automatically. Auto-renewal runs via the certbot sy
 
 ## Data persistence
 
-All uploaded images and the SQLite database are stored in the `card_data` Docker volume at `/data`. Back this up regularly:
+Uploaded images and the SQLite database are bind-mounted from the project root on the host — `uploads/` and `db.sqlite3`. Back them up directly:
 
 ```bash
-docker run --rm -v discovercardinspectortool_card_data:/data \
-  -v $(pwd):/backup alpine tar czf /backup/card_data_backup.tar.gz /data
+tar czf backup-$(date +%F).tar.gz uploads/ db.sqlite3
 ```

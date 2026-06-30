@@ -2,11 +2,14 @@ services:
   app:
     build: .
     restart: unless-stopped
+    env_file: .env
     environment:
-      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
       - DATABASE_PATH=/data/db.sqlite3
       - UPLOAD_FOLDER=/data/uploads
     volumes:
-      - /opt/discover-inspector/data:/data
+      # `touch db.sqlite3` once on the host before the first `docker compose up`;
+      # Docker creates a directory instead of a file if the path doesn't exist yet.
+      - ./db.sqlite3:/data/db.sqlite3
+      - ./uploads:/data/uploads
     ports:
       - "127.0.0.1:5001:5000"  # only reachable from host, not the public internet
