@@ -46,39 +46,37 @@ echo "SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_hex(32))')" >
 
 Create an A record for `discover-inspector.vione.cloud` pointing to your server's IP.
 
-### 3. Start
+### 3. Start the app container
 
 ```bash
 docker compose --env-file .env up -d --build
 ```
 
-The app will be available at `http://discover-inspector.vione.cloud`.
+Gunicorn listens on `127.0.0.1:5001` (host-only, not public).
 
-### 4. Enable HTTPS with Let's Encrypt (recommended)
+### 4. Configure the host Nginx
 
-Install Certbot on the host and obtain a certificate:
+This project ships `nginx/nginx.conf` as a ready-to-use vhost file. Copy it to your server's sites config and adjust the `/uploads/` alias path to match the actual Docker volume location:
 
 ```bash
-# Stop nginx temporarily to free port 80
-docker compose stop nginx
+# Find the volume path
+docker volume inspect discovercardinspectortool_card_data
 
-# Obtain certificate (replace with your email)
-certbot certonly --standalone \
-  -d discover-inspector.vione.cloud \
-  --email you@example.com \
-  --agree-tos --non-interactive
+# Copy the vhost file
+cp nginx/nginx.conf /etc/nginx/sites-available/discover-inspector
 
-# Restart
-docker compose start nginx
+# Edit the alias path, then enable and reload
+ln -s /etc/nginx/sites-available/discover-inspector /etc/nginx/sites-enabled/
+nginx -t && systemctl reload nginx
 ```
 
-Then edit `nginx/nginx.conf`:
-1. Uncomment the `return 301 https://...` line in the HTTP server block
-2. Uncomment the entire `server { listen 443 ssl ... }` block
-3. Uncomment the `/etc/letsencrypt` volume in `docker-compose.yml`
-4. Restart: `docker compose restart nginx`
+### 5. Enable HTTPS with Let's Encrypt (recommended)
 
-Auto-renewal: add a cron job to run `certbot renew && docker compose restart nginx`.
+```bash
+certbot --nginx -d discover-inspector.vione.cloud --email you@example.com --agree-tos
+```
+
+Certbot will patch the vhost automatically. Auto-renewal runs via the certbot systemd timer (check with `systemctl status certbot.timer`).
 
 ---
 
