@@ -22,12 +22,42 @@ def allowed_file(filename):
 @login_required
 def gallery():
     db = get_db()
-    cards = db.execute(
-        'SELECT c.id, c.filename, c.original_filename, c.json_data, c.created_at, u.username'
-        ' FROM cards c JOIN users u ON c.user_id = u.id'
-        ' ORDER BY c.created_at DESC'
-    ).fetchall()
-    return render_template('gallery.html', cards=cards)
+    tag_id = request.args.get('tag_id', type=int)
+    all_tags = db.execute('SELECT * FROM tags ORDER BY name').fetchall()
+
+    if tag_id:
+        cards = db.execute(
+            'SELECT c.id, c.filename, c.original_filename, c.json_data, c.created_at, u.username'
+            ' FROM cards c'
+            ' JOIN users u ON c.user_id = u.id'
+            ' JOIN card_tags ct ON c.id = ct.card_id'
+            ' WHERE ct.tag_id = ?'
+            ' ORDER BY c.created_at DESC',
+            (tag_id,)
+        ).fetchall()
+    else:
+        cards = db.execute(
+            'SELECT c.id, c.filename, c.original_filename, c.json_data, c.created_at, u.username'
+            ' FROM cards c JOIN users u ON c.user_id = u.id'
+            ' ORDER BY c.created_at DESC'
+        ).fetchall()
+
+    card_ids = [c['id'] for c in cards]
+    card_tags_map = {}
+    if card_ids:
+        placeholders = ','.join('?' * len(card_ids))
+        for row in db.execute(
+            f'SELECT ct.card_id, t.id, t.name, t.color'
+            f' FROM card_tags ct JOIN tags t ON ct.tag_id = t.id'
+            f' WHERE ct.card_id IN ({placeholders}) ORDER BY t.name',
+            card_ids
+        ).fetchall():
+            card_tags_map.setdefault(row['card_id'], []).append(
+                {'id': row['id'], 'name': row['name'], 'color': row['color']}
+            )
+
+    return render_template('gallery.html', cards=cards, all_tags=all_tags,
+                           active_tag_id=tag_id, card_tags_map=card_tags_map)
 
 
 @bp.route('/upload', methods=['GET', 'POST'])
@@ -89,8 +119,16 @@ def card_detail(card_id):
         'SELECT id, filename, original_filename FROM cards ORDER BY created_at DESC'
     ).fetchall()
 
+    card_tags = db.execute(
+        'SELECT t.id, t.name, t.color FROM tags t'
+        ' JOIN card_tags ct ON t.id = ct.tag_id'
+        ' WHERE ct.card_id = ? ORDER BY t.name',
+        (card_id,)
+    ).fetchall()
+
     pretty_json = json.dumps(json.loads(card['json_data']), indent=2)
-    return render_template('detail.html', card=card, all_cards=all_cards, pretty_json=pretty_json)
+    return render_template('detail.html', card=card, all_cards=all_cards,
+                           pretty_json=pretty_json, card_tags=card_tags)
 
 
 @bp.route('/card/<int:card_id>/delete', methods=['POST'])
@@ -109,6 +147,33 @@ def delete_card(card_id):
     db.commit()
     flash('Card deleted.', 'success')
     return redirect(url_for('main.gallery'))
+
+
+@bp.route('/card/<int:card_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_card(card_id):
+    db = get_db()
+    card = db.execute('SELECT * FROM cards WHERE id = ?', (card_id,)).fetchone()
+    if card is None:
+        abort(404)
+
+    if request.method == 'POST':
+        selected_ids = request.form.getlist('tag_ids', type=int)
+        db.execute('DELETE FROM card_tags WHERE card_id = ?', (card_id,))
+        for tid in selected_ids:
+            db.execute('INSERT OR IGNORE INTO card_tags (card_id, tag_id) VALUES (?, ?)',
+                       (card_id, tid))
+        db.commit()
+        flash('Tags updated.', 'success')
+        return redirect(url_for('main.card_detail', card_id=card_id))
+
+    all_tags = db.execute('SELECT * FROM tags ORDER BY name').fetchall()
+    card_tag_ids = {
+        row['tag_id'] for row in
+        db.execute('SELECT tag_id FROM card_tags WHERE card_id = ?', (card_id,)).fetchall()
+    }
+    return render_template('card_edit.html', card=card, all_tags=all_tags,
+                           card_tag_ids=card_tag_ids)
 
 
 @bp.route('/uploads/<filename>')

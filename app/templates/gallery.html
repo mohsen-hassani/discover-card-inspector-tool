@@ -10,6 +10,25 @@
     </a>
   </div>
 
+  {% if all_tags %}
+  <div class="flex flex-wrap gap-2 mb-5">
+    <a href="{{ url_for('main.gallery') }}"
+       class="text-xs px-3 py-1 rounded-full border transition-colors
+              {% if not active_tag_id %}bg-indigo-600 border-indigo-500 text-white
+              {% else %}bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500{% endif %}">
+      All
+    </a>
+    {% for tag in all_tags %}
+    <a href="{{ url_for('main.gallery', tag_id=tag['id']) }}"
+       class="text-xs px-3 py-1 rounded-full border transition-colors
+              {% if active_tag_id == tag['id'] %}{{ tag['color'] | tag_classes }}
+              {% else %}bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500{% endif %}">
+      {{ tag['name'] }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   {% if not cards %}
   <div class="text-center py-24 text-gray-500">
     <p class="text-lg mb-2">No cards yet.</p>
@@ -41,6 +60,13 @@
           <span class="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">{{ data.card_type }}</span>
           {% endif %}
         </div>
+        {% if card_tags_map.get(card['id']) %}
+        <div class="flex flex-wrap gap-1 mt-2">
+          {% for tag in card_tags_map[card['id']] %}
+          <span class="text-xs px-1.5 py-0.5 rounded border {{ tag['color'] | tag_classes }}">{{ tag['name'] }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
         <p class="text-xs text-gray-600 mt-2">{{ card['created_at'][:16].replace('T', ' ') }}</p>
       </div>
     </a>

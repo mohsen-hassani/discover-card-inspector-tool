@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Edit Tags — Card #{{ card['id'] }} — Discover Inspector{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="{{ url_for('main.card_detail', card_id=card['id']) }}"
+       class="text-gray-400 hover:text-gray-200 text-sm">← Back to card</a>
+    <span class="text-gray-700">|</span>
+    <h1 class="text-xl font-semibold">Edit Tags</h1>
+  </div>
+
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-6 flex items-center gap-4">
+    <img src="{{ url_for('main.uploaded_file', filename=card['filename']) }}"
+         alt="{{ card['original_filename'] }}"
+         class="w-20 h-14 object-cover rounded border border-gray-700 shrink-0">
+    <span class="text-sm text-gray-300 truncate">{{ card['original_filename'] }}</span>
+  </div>
+
+  {% if not all_tags %}
+  <div class="text-gray-500 text-sm">
+    No tags exist yet. <a href="{{ url_for('tags.list_tags') }}" class="text-indigo-400 hover:text-indigo-300">Create tags →</a>
+  </div>
+  {% else %}
+  <form method="post" class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <p class="text-sm font-medium text-gray-400 mb-4">Select tags to apply to this card:</p>
+    <div class="grid grid-cols-2 gap-2 mb-6">
+      {% for tag in all_tags %}
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" name="tag_ids" value="{{ tag['id'] }}"
+               {% if tag['id'] in card_tag_ids %}checked{% endif %}
+               class="rounded border-gray-600 bg-gray-800 text-indigo-500 focus:ring-indigo-500">
+        <span class="inline-flex items-center px-2 py-0.5 rounded border text-xs {{ tag['color'] | tag_classes }}">
+          {{ tag['name'] }}
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="flex gap-3">
+      <button type="submit"
+              class="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-md text-sm font-medium transition-colors">
+        Save tags
+      </button>
+      <a href="{{ url_for('main.card_detail', card_id=card['id']) }}"
+         class="px-6 py-2 rounded-md text-sm text-gray-400 hover:text-gray-200 transition-colors">
+        Cancel
+      </a>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

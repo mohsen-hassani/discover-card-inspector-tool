@@ -25,6 +25,7 @@
       <a href="{{ url_for('main.upload') }}" class="text-sm bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-md transition-colors">
         + Upload
       </a>
+      <a href="{{ url_for('tags.list_tags') }}" class="text-sm text-gray-400 hover:text-gray-200 transition-colors">Tags</a>
       <span class="text-sm text-gray-400">{{ g.user['username'] }}</span>
       <a href="{{ url_for('auth.logout') }}" class="text-sm text-gray-400 hover:text-gray-200">Logout</a>
     </div>
