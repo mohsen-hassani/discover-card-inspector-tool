@@ -7,9 +7,6 @@ services:
       - DATABASE_PATH=/data/db.sqlite3
       - UPLOAD_FOLDER=/data/uploads
     volumes:
-      - card_data:/data
+      - /opt/discover-inspector/data:/data
     ports:
       - "127.0.0.1:5001:5000"  # only reachable from host, not the public internet
-
-volumes:
-  card_data:

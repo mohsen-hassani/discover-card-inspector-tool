@@ -46,29 +46,29 @@ echo "SECRET_KEY=$(python3 -c 'import secrets; print(secrets.token_hex(32))')" >
 
 Create an A record for `discover-inspector.vione.cloud` pointing to your server's IP.
 
-### 3. Start the app container
+### 3. Create the data directory on the host
+
+```bash
+mkdir -p /opt/discover-inspector/data/uploads
+```
+
+### 4. Start the app container
 
 ```bash
 docker compose --env-file .env up -d --build
 ```
 
-Gunicorn listens on `127.0.0.1:5001` (host-only, not public).
+Gunicorn listens on `127.0.0.1:5001` (host-only, not public). Uploaded files and the database are stored at `/opt/discover-inspector/data/` on the host.
 
-### 4. Configure the host Nginx
-
-This project ships `nginx/nginx.conf` as a ready-to-use vhost file. Copy it to your server's sites config and adjust the `/uploads/` alias path to match the actual Docker volume location:
+### 5. Configure the host Nginx
 
 ```bash
-# Find the volume path
-docker volume inspect discovercardinspectortool_card_data
-
-# Copy the vhost file
 cp nginx/nginx.conf /etc/nginx/sites-available/discover-inspector
-
-# Edit the alias path, then enable and reload
 ln -s /etc/nginx/sites-available/discover-inspector /etc/nginx/sites-enabled/
 nginx -t && systemctl reload nginx
 ```
+
+Nginx serves uploaded images directly from `/opt/discover-inspector/data/uploads/` and proxies everything else to Gunicorn.
 
 ### 5. Enable HTTPS with Let's Encrypt (recommended)
 
