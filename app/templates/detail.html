@@ -39,14 +39,14 @@
   <div class="flex flex-1 overflow-hidden">
 
     {# Image panel #}
-    <div class="flex-1 overflow-auto flex items-start justify-center p-4 bg-gray-950 min-w-0">
+    <div class="w-1/2 overflow-auto flex items-start justify-center p-4 bg-gray-950">
       <img src="{{ url_for('main.uploaded_file', filename=card['filename']) }}"
            alt="{{ card['original_filename'] }}"
            class="max-w-full max-h-full object-contain rounded-lg shadow-2xl">
     </div>
 
     {# JSON panel #}
-    <div class="w-[420px] shrink-0 overflow-auto border-l border-gray-800 bg-gray-900 sidebar-scroll">
+    <div class="w-1/2 overflow-auto border-l border-gray-800 bg-gray-900 sidebar-scroll">
       <div class="sticky top-0 bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center justify-between z-10">
         <span class="text-xs font-medium text-gray-400 uppercase tracking-wider">JSON metadata</span>
         <button onclick="copyJson()" class="text-xs text-indigo-400 hover:text-indigo-300">Copy</button>
